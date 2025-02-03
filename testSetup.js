@@ -5,13 +5,13 @@
 // npm install --save-dev @testing-library/user-event
 // npm test -- --coverage
 
-import { afterEach } from 'vitest'
-import { cleanup } from '@testing-library/react'
-import '@testing-library/jest-dom/vitest'
+import { afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 
 afterEach(() => {
-  cleanup()
-})
+  cleanup();
+});
 
 // After each test, the function cleanup() is executed
 // to reset the jsdom, which is simulating the browser environment.

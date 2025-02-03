@@ -14,7 +14,7 @@ const Togglable = forwardRef((props, refs) => {
     return {
       toggleVisibility,
     };
-  })
+  });
 
   return (
     <div>
@@ -27,6 +27,6 @@ const Togglable = forwardRef((props, refs) => {
       </div>
     </div>
   );
-})
+});
 
 export default Togglable;
