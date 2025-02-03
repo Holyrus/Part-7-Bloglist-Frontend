@@ -8,10 +8,11 @@ import LoginForm from "./components/LoginForm";
 import Togglable from "./components/Togglable";
 import BlogForm from "./components/BlogForm";
 
+import { useDispatch } from "react-redux";
+
 const App = () => {
   const [blogs, setBlogs] = useState([]);
 
-  const [notificationMessage, setNotificationMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
 
   const [username, setUsername] = useState("");
@@ -147,7 +148,7 @@ const App = () => {
   return (
     <div>
       <h1>Blogs</h1>
-      <Notification message={notificationMessage} />
+      <Notification />
       <ErrorNotification message={errorMessage} />
 
       <Togglable buttonLabel="login">
