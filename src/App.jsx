@@ -8,18 +8,22 @@ import LoginForm from "./components/LoginForm";
 import Togglable from "./components/Togglable";
 import BlogForm from "./components/BlogForm";
 
+import { setNotification } from "./reducers/notificationReducer";
+import { setErrorNotification } from './reducers/errorNotificationReducer'
 import { useDispatch } from "react-redux";
 
 const App = () => {
   const [blogs, setBlogs] = useState([]);
 
-  const [errorMessage, setErrorMessage] = useState(null);
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null); // Here we store the user token
 
+  const [newBlogCreated, setNewBlogCreated] = useState(false)
+
   const blogFormRef = useRef();
+
+  const dispatch = useDispatch()
 
   // When we enter the page, all checks if user is already logged in and can be found in local storage
 
@@ -32,17 +36,16 @@ const App = () => {
     }
   }, []);
 
-  useEffect(() => {
-    blogService.getAll().then((initialBlogs) => setBlogs(initialBlogs));
-  }, [notificationMessage]);
+    useEffect(() => {
+      if (user) {
+        blogService.getAll().then((initialBlogs) => setBlogs(initialBlogs));
+      }
+    }, [newBlogCreated, user]);
 
   const handleLogout = () => {
     window.localStorage.removeItem("loggedBlogappUser");
     setUser(null);
-    setNotificationMessage("Logged out successfully");
-    setTimeout(() => {
-      setNotificationMessage(null);
-    }, 5000);
+    dispatch(setNotification("Logged out successfully", 5));
   };
 
   const handleLogin = async (event) => {
@@ -64,15 +67,10 @@ const App = () => {
       setUser(user); // Storing the user token
       setUsername("");
       setPassword("");
-      setNotificationMessage("Logged in successfully");
-      setTimeout(() => {
-        setNotificationMessage(null);
-      }, 5000);
+      dispatch(setNotification("Logged in successfully", 5));
+      
     } catch (exception) {
-      setErrorMessage("Wrong credentials");
-      setTimeout(() => {
-        setErrorMessage(null);
-      }, 5000);
+      dispatch(setErrorNotification("Wrong credentials", 5));
     }
   };
 
@@ -81,12 +79,10 @@ const App = () => {
 
     blogService.create(blogObject).then((returnedBlog) => {
       setBlogs(blogs.concat(returnedBlog));
-      setNotificationMessage(
-        `A new blog ${returnedBlog.title} by ${returnedBlog.author} added`,
-      );
-      setTimeout(() => {
-        setNotificationMessage(null);
-      }, 5000);
+      setNewBlogCreated(!newBlogCreated)
+      dispatch(setNotification(
+        `A new blog ${returnedBlog.title} by ${returnedBlog.author} added`, 5
+      ));
     });
   };
 
@@ -106,16 +102,10 @@ const App = () => {
             blog.id === returnedBlog.id ? returnedBlog : blog,
           ),
         );
-        setNotificationMessage("Like added");
-        setTimeout(() => {
-          setNotificationMessage(null);
-        }, 5000);
+        dispatch(setNotification("Like added", 5));
       })
       .catch((error) => {
-        setErrorMessage("Cannot add Like", error.response.data);
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 5000);
+        dispatch(setErrorNotification("Cannot add Like", error.response.data));
       });
   };
 
@@ -131,16 +121,10 @@ const App = () => {
         .remove(id)
         .then(() => {
           setBlogs(blogs.filter((blog) => blog.id !== id));
-          setNotificationMessage("Blog removed");
-          setTimeout(() => {
-            setNotificationMessage(null);
-          }, 5000);
+          dispatch(setNotification("Blog removed", 5));
         })
         .catch((error) => {
-          setErrorMessage("Cannot remove blog", error.response.data);
-          setTimeout(() => {
-            setErrorMessage(null);
-          }, 5000);
+          dispatch(setErrorNotification("Cannot remove blog", error.response.data));
         });
     }
   };
@@ -149,7 +133,7 @@ const App = () => {
     <div>
       <h1>Blogs</h1>
       <Notification />
-      <ErrorNotification message={errorMessage} />
+      <ErrorNotification />
 
       <Togglable buttonLabel="login">
         <LoginForm
