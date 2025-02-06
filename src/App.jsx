@@ -10,10 +10,11 @@ import BlogForm from "./components/BlogForm";
 
 import { setNotification } from "./reducers/notificationReducer";
 import { setErrorNotification } from './reducers/errorNotificationReducer'
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { additionLike, deletingBlog, initializeBlogs, likeIncrement } from "./reducers/blogReducer";
+import { createBlog } from "./reducers/blogReducer";
 
 const App = () => {
-  const [blogs, setBlogs] = useState([]);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +25,8 @@ const App = () => {
   const blogFormRef = useRef();
 
   const dispatch = useDispatch()
+
+  const blogs = useSelector(state => state.blogs)
 
   // When we enter the page, all checks if user is already logged in and can be found in local storage
 
@@ -36,11 +39,17 @@ const App = () => {
     }
   }, []);
 
+    // useEffect(() => {
+    //   if (user) {
+    //     blogService.getAll().then((initialBlogs) => setBlogs(initialBlogs));
+    //   }
+    // }, [newBlogCreated, user]);
+
     useEffect(() => {
       if (user) {
-        blogService.getAll().then((initialBlogs) => setBlogs(initialBlogs));
+        dispatch(initializeBlogs())
       }
-    }, [newBlogCreated, user]);
+    }, [newBlogCreated, user])
 
   const handleLogout = () => {
     window.localStorage.removeItem("loggedBlogappUser");
@@ -77,36 +86,50 @@ const App = () => {
   const addBlog = (blogObject) => {
     blogFormRef.current.toggleVisibility();
 
-    blogService.create(blogObject).then((returnedBlog) => {
-      setBlogs(blogs.concat(returnedBlog));
-      setNewBlogCreated(!newBlogCreated)
-      dispatch(setNotification(
-        `A new blog ${returnedBlog.title} by ${returnedBlog.author} added`, 5
-      ));
-    });
+    dispatch(createBlog(blogObject))
+    setNewBlogCreated(!newBlogCreated)
+    dispatch(initializeBlogs())
+    dispatch(setNotification(
+        `A new blog ${blogObject.title} by ${blogObject.author} added`, 5
+    ));
+
+    // blogService.create(blogObject).then((returnedBlog) => {
+    //   setBlogs(blogs.concat(returnedBlog));
+    // setNewBlogCreated(!newBlogCreated)
+    // dispatch(setNotification(
+    //   `A new blog ${blogObject.title} by ${blogObject.author} added`, 5
+    // ));
+    // });
   };
 
   const updateBlog = (id) => {
-    const likedBlog = blogs.find((blog) => blog.id === id);
 
-    const blogObject = {
-      ...likedBlog,
-      likes: (likedBlog.likes += 1),
-    };
+    dispatch(likeIncrement(id))
+    const currentBlog = blogs.find(blog => blog.id === id)
+    dispatch(additionLike(currentBlog))
 
-    blogService
-      .update(id, blogObject)
-      .then((returnedBlog) => {
-        setBlogs(
-          blogs.map((blog) =>
-            blog.id === returnedBlog.id ? returnedBlog : blog,
-          ),
-        );
-        dispatch(setNotification("Like added", 5));
-      })
-      .catch((error) => {
-        dispatch(setErrorNotification("Cannot add Like", error.response.data));
-      });
+    dispatch(setNotification("Like added", 5));
+
+    // const likedBlog = blogs.find((blog) => blog.id === id);
+
+    // const blogObject = {
+    //   ...likedBlog,
+    //   likes: (likedBlog.likes += 1),
+    // };
+
+    // blogService
+    //   .update(id, blogObject)
+    //   .then((returnedBlog) => {
+    //     setBlogs(
+    //       blogs.map((blog) =>
+    //         blog.id === returnedBlog.id ? returnedBlog : blog,
+    //       ),
+    //     );
+    //     dispatch(setNotification("Like added", 5));
+    //   })
+    //   .catch((error) => {
+    //     dispatch(setErrorNotification("Cannot add Like", error.response.data));
+    //   });
   };
 
   const deleteBlog = (id) => {
@@ -117,15 +140,19 @@ const App = () => {
         `Remove blog ${blogToDelete.title} by ${blogToDelete.author}`,
       )
     ) {
-      blogService
-        .remove(id)
-        .then(() => {
-          setBlogs(blogs.filter((blog) => blog.id !== id));
-          dispatch(setNotification("Blog removed", 5));
-        })
-        .catch((error) => {
-          dispatch(setErrorNotification("Cannot remove blog", error.response.data));
-        });
+
+      dispatch(deletingBlog(id))
+      dispatch(setNotification("Blog removed", 5));
+
+      // blogService
+      //   .remove(id)
+      //   .then(() => {
+      //     setBlogs(blogs.filter((blog) => blog.id !== id));
+      //     dispatch(setNotification("Blog removed", 5));
+      //   })
+      //   .catch((error) => {
+      //     dispatch(setErrorNotification("Cannot remove blog", error.response.data));
+      //   });
     }
   };
 
@@ -154,7 +181,7 @@ const App = () => {
           </Togglable>
           <h2>blogs</h2>
           {blogs.length !== 0 ? (
-            blogs
+            [...blogs]
               .sort((a, b) => b.likes - a.likes)
               .map((blog) => (
                 <Blog
