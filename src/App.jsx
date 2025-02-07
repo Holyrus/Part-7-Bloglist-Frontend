@@ -14,17 +14,22 @@ import { useDispatch, useSelector } from "react-redux";
 import { additionLike, deletingBlog, initializeBlogs, likeIncrement } from "./reducers/blogReducer";
 import { createBlog } from "./reducers/blogReducer";
 
+import { setUser } from "./reducers/userReducer"
+
 const App = () => {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState(null); // Here we store the user token
+  // const [user, setUser] = useState(null); // Here we store the user token
+  const [unauthorizedError, setUnauthorizedError] = useState(null)
 
   const [newBlogCreated, setNewBlogCreated] = useState(false)
 
   const blogFormRef = useRef();
 
   const dispatch = useDispatch()
+
+  const user = useSelector(state => state.user)
 
   const blogs = useSelector(state => state.blogs)
 
@@ -34,7 +39,8 @@ const App = () => {
     const loggedUserJSON = window.localStorage.getItem("loggedBlogappUser");
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON);
-      setUser(user);
+      dispatch(setUser(user))
+      // setUser(user);
       blogService.setToken(user.token);
     }
   }, []);
@@ -48,12 +54,19 @@ const App = () => {
     useEffect(() => {
       if (user) {
         dispatch(initializeBlogs())
+        .catch((error) => {
+          if (error.response && error.response.status === 401) {
+            setUnauthorizedError('Unauthorized')
+            console.log(unauthorizedError)
+          }
+         })
       }
     }, [newBlogCreated, user])
 
   const handleLogout = () => {
     window.localStorage.removeItem("loggedBlogappUser");
-    setUser(null);
+    // setUser(null);
+    dispatch(setUser(null))
     dispatch(setNotification("Logged out successfully", 5));
   };
 
@@ -73,7 +86,8 @@ const App = () => {
       );
 
       blogService.setToken(user.token); // Setting the token to the blogService
-      setUser(user); // Storing the user token
+      // setUser(user); // Storing the user token
+      dispatch(setUser(user))
       setUsername("");
       setPassword("");
       dispatch(setNotification("Logged in successfully", 5));
@@ -172,7 +186,7 @@ const App = () => {
         />
       </Togglable>
 
-      {user !== null && (
+      {user !== null && unauthorizedError !== 'Unauthorized' ? (
         <div>
           <p>{user.name} logged-in</p>
           <button onClick={handleLogout}>Logout</button>
@@ -197,6 +211,8 @@ const App = () => {
             <p>No blogs</p>
           )}
         </div>
+      ) : (
+        <p>{unauthorizedError}</p>
       )}
     </div>
   );
